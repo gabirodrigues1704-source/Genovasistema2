@@ -7,6 +7,10 @@ import { useToast } from '@/components/ui/use-toast';
 const initialFormData = {
     nome: '',
     cnpj: '',
+    cartao_cnpj: '', // 🆕 novo campo
+    inscricao_estadual: '', // 🆕 novo campo
+    inscricao_municipal: '', // 🆕 novo campo
+    data_inicio_contabil: '', // 🆕
     endereco: '',
     cidade: '',
     cep: '',
@@ -30,11 +34,12 @@ const DocumentationSection = ({ title, docKey, formData, handleChange, errors })
         const { name, value, type, checked } = e.target;
         const newDocData = { ...docData };
 
-        if (name === 'entregue') {
+        if (name === "entregue") {
             newDocData.entregue = checked;
-            if (!checked) { // Reset fields if unchecked
-                Object.keys(newDocData).forEach(key => {
-                    if (key !== 'entregue') {
+            if (!checked) {
+                // Reset fields when unchecked
+                Object.keys(newDocData).forEach((key) => {
+                    if (key !== "entregue") {
                         newDocData[key] = initialFormData.documentacao[docKey][key];
                     }
                 });
@@ -43,14 +48,19 @@ const DocumentationSection = ({ title, docKey, formData, handleChange, errors })
             newDocData[name] = value;
         }
 
-        handleChange({ target: { name: 'documentacao', value: { ...formData.documentacao, [docKey]: newDocData } } });
+        handleChange({
+            target: {
+                name: "documentacao",
+                value: { ...formData.documentacao, [docKey]: newDocData },
+            },
+        });
     };
 
     const docError = errors?.documentacao?.[docKey] || {};
 
     return (
-        <fieldset className="border p-4 rounded-lg space-y-4" disabled={!docData.entregue}>
-            <div className="flex items-center">
+        <fieldset className="border p-4 rounded-lg space-y-4">
+            <div className="flex items-center mb-3">
                 <input
                     type="checkbox"
                     id={`${docKey}_entregue`}
@@ -58,68 +68,174 @@ const DocumentationSection = ({ title, docKey, formData, handleChange, errors })
                     checked={docData.entregue}
                     onChange={handleDocChange}
                     className="w-5 h-5 text-[#d4af37] border-gray-300 rounded focus:ring-[#d4af37]"
-                    style={{ all: 'revert' }}
+                    style={{ all: "revert" }}
                 />
-                <label htmlFor={`${docKey}_entregue`} className="ml-2 font-medium text-gray-800">{title} Entregue</label>
+                <label
+                    htmlFor={`${docKey}_entregue`}
+                    className="ml-2 font-medium text-gray-800"
+                >
+                    {title} Entregue
+                </label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+                className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all ${!docData.entregue ? "opacity-60" : "opacity-100"
+                    }`}
+            >
+                {/* ========== Data de Recebimento ========== */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data Recebimento</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data Recebimento
+                    </label>
                     <input
                         type="date"
                         name="data_recebimento"
-                        value={docData.data_recebimento || ''}
+                        value={docData.data_recebimento || ""}
                         onChange={handleDocChange}
-                        className={`w-full px-3 py-2 border rounded-lg ${docError.data_recebimento ? 'border-red-500' : 'border-gray-300'}`}
+                        disabled={!docData.entregue}
+                        className={`w-full px-3 py-2 border rounded-lg ${docError.data_recebimento
+                            ? "border-red-500"
+                            : "border-gray-300"
+                            } ${!docData.entregue ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                            }`}
                     />
-                    {docError.data_recebimento && <p className="text-red-500 text-sm mt-1">{docError.data_recebimento}</p>}
+                    {docError.data_recebimento && (
+                        <p className="text-red-500 text-sm mt-1">
+                            {docError.data_recebimento}
+                        </p>
+                    )}
                 </div>
 
-                {docKey === 'contrato_social' && (
+                {/* ========== Campos específicos por documento ========== */}
+                {docKey === "contrato_social" && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                        <input type="text" name="observacoes" value={docData.observacoes} onChange={handleDocChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Observações
+                        </label>
+                        <input
+                            type="text"
+                            name="observacoes"
+                            value={docData.observacoes}
+                            onChange={handleDocChange}
+                            disabled={!docData.entregue}
+                            className={`w-full px-3 py-2 border rounded-lg ${!docData.entregue
+                                ? "bg-gray-100 cursor-not-allowed"
+                                : "bg-white border-gray-300"
+                                }`}
+                        />
                     </div>
                 )}
 
-                {docKey === 'balancete' && (
+                {docKey === "balancete" && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ativo Total</label>
-                            <input type="number" step="0.01" name="ativo_total" value={docData.ativo_total || ''} onChange={handleDocChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Ativo Total
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="ativo_total"
+                                value={docData.ativo_total || ""}
+                                onChange={handleDocChange}
+                                disabled={!docData.entregue}
+                                className={`w-full px-3 py-2 border rounded-lg ${!docData.entregue
+                                    ? "bg-gray-100 cursor-not-allowed"
+                                    : "bg-white border-gray-300"
+                                    }`}
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Passivo Total</label>
-                            <input type="number" step="0.01" name="passivo_total" value={docData.passivo_total || ''} onChange={handleDocChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Passivo Total
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="passivo_total"
+                                value={docData.passivo_total || ""}
+                                onChange={handleDocChange}
+                                disabled={!docData.entregue}
+                                className={`w-full px-3 py-2 border rounded-lg ${!docData.entregue
+                                    ? "bg-gray-100 cursor-not-allowed"
+                                    : "bg-white border-gray-300"
+                                    }`}
+                            />
                         </div>
                     </>
                 )}
 
-                {docKey === 'balanco_anual' && (
+                {docKey === "balanco_anual" && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Lucro/Prejuízo</label>
-                            <input type="number" step="0.01" name="lucro_prejuizo" value={docData.lucro_prejuizo || ''} onChange={handleDocChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Lucro/Prejuízo
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="lucro_prejuizo"
+                                value={docData.lucro_prejuizo || ""}
+                                onChange={handleDocChange}
+                                disabled={!docData.entregue}
+                                className={`w-full px-3 py-2 border rounded-lg ${!docData.entregue
+                                    ? "bg-gray-100 cursor-not-allowed"
+                                    : "bg-white border-gray-300"
+                                    }`}
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ano Referência</label>
-                            <input type="number" name="ano_referencia" value={docData.ano_referencia || ''} onChange={handleDocChange} className={`w-full px-3 py-2 border rounded-lg ${docError.ano_referencia ? 'border-red-500' : 'border-gray-300'}`} />
-                            {docError.ano_referencia && <p className="text-red-500 text-sm mt-1">{docError.ano_referencia}</p>}
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Ano Referência
+                            </label>
+                            <input
+                                type="number"
+                                name="ano_referencia"
+                                value={docData.ano_referencia || ""}
+                                onChange={handleDocChange}
+                                disabled={!docData.entregue}
+                                className={`w-full px-3 py-2 border rounded-lg ${docError.ano_referencia
+                                    ? "border-red-500"
+                                    : "border-gray-300"
+                                    } ${!docData.entregue
+                                        ? "bg-gray-100 cursor-not-allowed"
+                                        : "bg-white"
+                                    }`}
+                            />
+                            {docError.ano_referencia && (
+                                <p className="text-red-500 text-sm mt-1">
+                                    {docError.ano_referencia}
+                                </p>
+                            )}
                         </div>
                     </>
                 )}
 
-                {docKey === 'livros_entradas_saidas' && (
+                {docKey === "livros_entradas_saidas" && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                        <input type="text" name="observacoes" value={docData.observacoes} onChange={handleDocChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Observações
+                        </label>
+                        <input
+                            type="text"
+                            name="observacoes"
+                            value={docData.observacoes}
+                            onChange={handleDocChange}
+                            disabled={!docData.entregue}
+                            className={`w-full px-3 py-2 border rounded-lg ${!docData.entregue
+                                ? "bg-gray-100 cursor-not-allowed"
+                                : "bg-white border-gray-300"
+                                }`}
+                        />
                     </div>
                 )}
             </div>
         </fieldset>
     );
 };
+
+
+
 
 const ClienteForm = ({ cliente, onSave, onCancel }) => {
     const [formData, setFormData] = useState(initialFormData);
@@ -166,6 +282,18 @@ const ClienteForm = ({ cliente, onSave, onCancel }) => {
         if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
         if (!formData.cnpj.trim()) newErrors.cnpj = 'CNPJ é obrigatório';
         else if (!validateCNPJ(formData.cnpj)) newErrors.cnpj = 'CNPJ inválido';
+        if (!formData.cartao_cnpj.trim()) newErrors.cartao_cnpj = 'Cartão CNPJ é obrigatório';
+        if (!formData.inscricao_estadual.trim()) newErrors.inscricao_estadual = 'Inscrição Estadual é obrigatória';
+        if (!formData.inscricao_municipal.trim()) newErrors.inscricao_municipal = 'Inscrição Municipal é obrigatória';
+        // ======= 🆕 Validação da data de início contábil =======
+        if (!formData.data_inicio_contabil) {
+            newErrors.data_inicio_contabil = 'Data de início contábil é obrigatória';
+        } else {
+            const hoje = new Date().toISOString().split('T')[0];
+            if (formData.data_inicio_contabil > hoje) {
+                newErrors.data_inicio_contabil = 'A data de início não pode ser futura.';
+            }
+        }
         if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
         else if (!validateEmail(formData.email)) newErrors.email = 'Email inválido';
         if (!formData.valor_honorario || parseFloat(formData.valor_honorario) <= 0) newErrors.valor_honorario = 'Valor do honorário é obrigatório';
@@ -227,6 +355,55 @@ const ClienteForm = ({ cliente, onSave, onCancel }) => {
                     <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} maxLength={18} className={`w-full px-4 py-2 border rounded-lg ${errors.cnpj ? 'border-red-500' : 'border-gray-300'}`} />
                     {errors.cnpj && <p className="text-red-500 text-sm mt-1">{errors.cnpj}</p>}
                 </div>
+                {/* 🆕 Campos adicionais */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cartão CNPJ</label>
+                    <input
+                        type="text"
+                        name="cartao_cnpj"
+                        value={formData.cartao_cnpj}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Inscrição Estadual</label>
+                    <input
+                        type="text"
+                        name="inscricao_estadual"
+                        value={formData.inscricao_estadual}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Inscrição Municipal</label>
+                    <input
+                        type="text"
+                        name="inscricao_municipal"
+                        value={formData.inscricao_municipal}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Data Início Contábil *</label>
+                    <input
+                        type="date"
+                        name="data_inicio_contabil"
+                        value={formData.data_inicio_contabil}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-2 border rounded-lg ${errors.data_inicio_contabil ? 'border-red-500' : 'border-gray-300'}`}
+                    />
+                    {errors.data_inicio_contabil && (
+                        <p className="text-red-500 text-sm mt-1">{errors.data_inicio_contabil}</p>
+                    )}
+                </div>
+
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Telefone *</label>
                     <input type="text" name="telefone" value={formData.telefone} onChange={handleChange} maxLength={15} className={`w-full px-4 py-2 border rounded-lg ${errors.telefone ? 'border-red-500' : 'border-gray-300'}`} />
