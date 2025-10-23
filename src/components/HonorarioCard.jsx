@@ -40,6 +40,28 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
             description: `Status do honorário atualizado.`
         });
     };
+    const [editingService, setEditingService] = useState(null);
+    const handleEditExtraService = (index, servico) => {
+        setIsExtraServiceModalOpen(true);
+        setEditingService({ index, servico });
+    };
+
+    const handleDeleteExtraService = (index) => {
+        const updatedServicos = honorario.servicos_extras.filter((_, i) => i !== index);
+        const novoTotal = honorario.valor_base + updatedServicos.reduce((sum, s) => sum + s.valor, 0);
+
+        const updatedHonorario = {
+            ...honorario,
+            servicos_extras: updatedServicos,
+            valor_total: novoTotal
+        };
+
+        onUpdate(updatedHonorario);
+        toast({
+            title: "Serviço extra removido!",
+            description: "O serviço foi excluído com sucesso."
+        });
+    };
 
     const handleAddExtraService = (service) => {
         const updatedServicos = [...(honorario.servicos_extras || []), service];
@@ -181,12 +203,38 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
                         <p className="text-sm font-medium text-gray-700 mb-2">Serviços Extras:</p>
                         <div className="space-y-2">
                             {honorario.servicos_extras.map((servico, index) => (
-                                <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <div
+                                    key={index}
+                                    className="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition"
+                                >
                                     <div>
                                         <p className="font-medium text-gray-900">{servico.descricao}</p>
-                                        <p className="text-sm text-gray-600">{formatDate(servico.data)}</p>
+                                        <p className="text-sm text-gray-600">
+                                            {formatDate(servico.data)} — {formatCurrency(servico.valor)}
+                                        </p>
                                     </div>
-                                    <p className="font-semibold text-[#d4af37]">{formatCurrency(servico.valor)}</p>
+
+                                    <div className="flex items-center space-x-2">
+                                        {/* Botão editar */}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                                            onClick={() => handleEditExtraService(index, servico)}
+                                        >
+                                            Editar
+                                        </Button>
+
+                                        {/* Botão excluir */}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                            onClick={() => handleDeleteExtraService(index)}
+                                        >
+                                            Excluir
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -206,13 +254,41 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
 
             <Modal
                 isOpen={isExtraServiceModalOpen}
-                onClose={() => setIsExtraServiceModalOpen(false)}
-                title="Adicionar Serviço Extra"
+                onClose={() => {
+                    setIsExtraServiceModalOpen(false);
+                    setEditingService(null);
+                }}
+                title={editingService ? "Editar Serviço Extra" : "Adicionar Serviço Extra"}
                 size="md"
             >
                 <ExtraServiceForm
-                    onSave={handleAddExtraService}
-                    onCancel={() => setIsExtraServiceModalOpen(false)}
+                    existingService={editingService?.servico}
+                    onSave={(service) => {
+                        if (editingService) {
+                            // Editando serviço existente
+                            const updatedServicos = [...honorario.servicos_extras];
+                            updatedServicos[editingService.index] = service;
+                            const novoTotal = honorario.valor_base + updatedServicos.reduce((sum, s) => sum + s.valor, 0);
+                            onUpdate({
+                                ...honorario,
+                                servicos_extras: updatedServicos,
+                                valor_total: novoTotal
+                            });
+                            toast({
+                                title: "Serviço extra atualizado!",
+                                description: `${service.descricao} foi atualizado com sucesso.`
+                            });
+                        } else {
+                            // Adicionando novo serviço
+                            handleAddExtraService(service);
+                        }
+                        setIsExtraServiceModalOpen(false);
+                        setEditingService(null);
+                    }}
+                    onCancel={() => {
+                        setIsExtraServiceModalOpen(false);
+                        setEditingService(null);
+                    }}
                 />
             </Modal>
         </>
