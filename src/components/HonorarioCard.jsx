@@ -62,19 +62,17 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
 
     const handleDownloadPDF = async () => {
         try {
-            const { pdf, fileName } = await generateHonorarioPDF(honorario, cliente);
-            pdf.save(fileName);
-
+            await generateHonorarioPDF(honorario, cliente);
             toast({
                 title: "PDF gerado!",
-                description: "O recibo foi baixado com sucesso."
+                description: "O recibo foi baixado com sucesso.",
             });
         } catch (error) {
             console.error("PDF generation error:", error);
             toast({
                 title: "Erro ao gerar PDF",
                 description: `Ocorreu um erro ao gerar o PDF: ${error.message}`,
-                variant: "destructive"
+                variant: "destructive",
             });
         }
     };
