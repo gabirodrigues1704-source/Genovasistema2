@@ -10,13 +10,13 @@ import {
     Tooltip,
     Legend,
     CartesianGrid,
+    LabelList,
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 
 export default function RelatorioFinanceiro() {
     const honorarios = storage.getHonorarios();
 
-    // 🔍 Normaliza a leitura de ano — pega os 4 últimos dígitos do campo mes_referencia
     const anos = [
         ...new Set(
             honorarios
@@ -30,20 +30,9 @@ export default function RelatorioFinanceiro() {
         anos.includes(anoAtual) ? anoAtual : anos[0] || anoAtual
     );
 
-    // 🔢 Mapeamento de meses (para ordenação)
     const ordemMeses = [
-        "Janeiro",
-        "Fevereiro",
-        "Março",
-        "Abril",
-        "Maio",
-        "Junho",
-        "Julho",
-        "Agosto",
-        "Setembro",
-        "Outubro",
-        "Novembro",
-        "Dezembro",
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
     ];
 
     const dados = useMemo(() => {
@@ -55,20 +44,17 @@ export default function RelatorioFinanceiro() {
                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
             ];
 
-            // 1️⃣ Se for formato "Outubro/2025"
             const mesTexto = ordemMeses.find((m) =>
                 mesReferencia.toLowerCase().includes(m.toLowerCase())
             );
             if (mesTexto) return mesTexto;
 
-            // 2️⃣ Se for formato numérico "10/2025" ou "2025-10"
             const matchAnoMes = mesReferencia.match(/(\d{4})[-\/](\d{1,2})/);
             if (matchAnoMes) {
                 const numeroMes = parseInt(matchAnoMes[2], 10);
                 return ordemMeses[numeroMes - 1] || "Desconhecido";
             }
 
-            // 3️⃣ Se for formato "10/2025" (invertido)
             const matchMesAno = mesReferencia.match(/(\d{1,2})[-\/](\d{4})/);
             if (matchMesAno) {
                 const numeroMes = parseInt(matchMesAno[1], 10);
@@ -83,19 +69,16 @@ export default function RelatorioFinanceiro() {
             .forEach((h) => {
                 const mesNome = obterNomeMes(h.mes_referencia);
 
-                if (!mapa[mesNome]) mapa[mesNome] = { mes: mesNome, recebido: 0, pendente: 0, total: 0 };
+                if (!mapa[mesNome]) mapa[mesNome] = { mes: mesNome, recebido: 0, pendente: 0, totalPrevisto: 0 };
 
-                mapa[mesNome].total += h.valor_total;
+                mapa[mesNome].totalPrevisto += h.valor_total;
                 if (h.status === "pago") mapa[mesNome].recebido += h.valor_total;
                 else mapa[mesNome].pendente += h.valor_total;
             });
 
-        const ordemMeses = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-        ];
-
-        return ordemMeses.map((mes) => mapa[mes] || { mes, recebido: 0, pendente: 0, total: 0 });
+        return ordemMeses.map((mes) =>
+            mapa[mes] || { mes, recebido: 0, pendente: 0, totalPrevisto: 0 }
+        );
     }, [honorarios, anoSelecionado]);
 
     if (!honorarios.length) {
@@ -113,7 +96,6 @@ export default function RelatorioFinanceiro() {
                     Evolução Financeira ({anoSelecionado})
                 </h2>
 
-                {/* 🔽 Filtro de Ano */}
                 <select
                     value={anoSelecionado}
                     onChange={(e) => setAnoSelecionado(e.target.value)}
@@ -128,16 +110,53 @@ export default function RelatorioFinanceiro() {
             </div>
 
             <ResponsiveContainer width="100%" height={320}>
-                <ComposedChart data={dados}>
+                <ComposedChart
+                    data={dados}
+                    margin={{ top: 20, right: 30, left: 60, bottom: 20 }} // ✅ margem corrigida
+                >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="mes" />
-                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                    <YAxis
+                        tickFormatter={(value) => formatCurrency(value)}
+                        width={80} // ✅ garante espaço pro "R$"
+                    />
                     <Tooltip formatter={(value) => formatCurrency(value)} />
                     <Legend />
 
-                    <Bar dataKey="recebido" fill="#10b981" name="Recebido" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="pendente" fill="#3b82f6" name="Pendente" radius={[4, 4, 0, 0]} />
-                    <Line type="monotone" dataKey="total" stroke="#d4af37" strokeWidth={3} name="Total Previsto" />
+                    <Bar dataKey="pendente" fill="#3b82f6" name="Pendente">
+                        <LabelList
+                            dataKey="pendente"
+                            position="top"
+                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
+                            style={{ fontSize: 12, fill: '#3b82f6', fontWeight: 600 }}
+                        />
+                    </Bar>
+
+                    <Bar dataKey="recebido" fill="#10b981" name="Recebido">
+                        <LabelList
+                            dataKey="recebido"
+                            position="top"
+                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
+                            style={{ fontSize: 12, fill: '#10b981', fontWeight: 600 }}
+                        />
+                    </Bar>
+
+                    <Line
+                        type="monotone"
+                        dataKey="totalPrevisto"
+                        stroke="#d4af37"
+                        strokeWidth={3}
+                        name="Total Previsto"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                    >
+                        <LabelList
+                            dataKey="totalPrevisto"
+                            position="top"
+                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
+                            style={{ fontSize: 12, fill: '#b88e1c', fontWeight: 600 }}
+                        />
+                    </Line>
                 </ComposedChart>
             </ResponsiveContainer>
         </div>
