@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
 import Honorarios from "@/pages/Honorarios";
+import ClienteDetalhes from "@/pages/ClienteDetalhes"; // 🆕 Import da nova página
 import Login from "@/pages/Login";
 import { Toaster } from "@/components/ui/toaster";
 import PrivateRoute from "@/components/PrivateRoute";
@@ -40,6 +41,7 @@ function AppContent() {
                                 </PrivateRoute>
                             }
                         />
+
                         <Route
                             path="/clientes"
                             element={
@@ -48,6 +50,17 @@ function AppContent() {
                                 </PrivateRoute>
                             }
                         />
+
+                        {/* 🆕 Nova rota de detalhes */}
+                        <Route
+                            path="/clientes/:id"
+                            element={
+                                <PrivateRoute>
+                                    <ClienteDetalhes />
+                                </PrivateRoute>
+                            }
+                        />
+
                         <Route
                             path="/honorarios"
                             element={

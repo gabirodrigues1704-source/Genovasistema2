@@ -7,6 +7,8 @@ import ClienteForm from '@/components/ClienteForm';
 import { storage } from '@/lib/storage';
 import { formatCNPJ, formatPhone, formatCEP, formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from "react-router-dom";
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +39,7 @@ const getDocumentationStatus = (documentacao) => {
 };
 
 const Clientes = () => {
+    const navigate = useNavigate();
     const [clientes, setClientes] = useState([]);
     const [filteredClientes, setFilteredClientes] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -202,6 +205,13 @@ const Clientes = () => {
                                     </div>
 
                                     <div className="flex space-x-2 ml-4">
+                                        <Button
+                                            onClick={() => navigate(`/clientes/${cliente.id}`)}
+                                            variant="outline"
+                                            className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-white"
+                                        >
+                                            Detalhes
+                                        </Button>
                                         <Button
                                             onClick={() => handleEdit(cliente)}
                                             variant="outline"
