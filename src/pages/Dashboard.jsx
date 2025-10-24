@@ -5,6 +5,7 @@ import { TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
 import CardResumo from '@/components/CardResumo';
 import { storage } from '@/lib/storage';
 import { getCurrentMonthYear } from '@/lib/utils';
+import RelatorioFinanceiro from "@/components/RelatorioFinanceiro";
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
@@ -93,6 +94,7 @@ const Dashboard = () => {
                         delay={0.3}
                     />
                 </div>
+                <RelatorioFinanceiro />
             </div>
         </>
     );
