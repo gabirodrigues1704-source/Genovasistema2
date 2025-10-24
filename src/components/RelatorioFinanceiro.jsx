@@ -159,6 +159,48 @@ export default function RelatorioFinanceiro() {
                     </Line>
                 </ComposedChart>
             </ResponsiveContainer>
+            {/* 🧾 Tabela detalhada mensal */}
+            <div className="mt-8 overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <thead className="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th className="px-4 py-3 text-left">Mês</th>
+                            <th className="px-4 py-3 text-right">Total Previsto</th>
+                            <th className="px-4 py-3 text-right">Recebido</th>
+                            <th className="px-4 py-3 text-right">Pendente</th>
+                            <th className="px-4 py-3 text-right">% Pago</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {dados.map((item) => {
+                            const porcentagem =
+                                item.totalPrevisto > 0
+                                    ? ((item.recebido / item.totalPrevisto) * 100).toFixed(1)
+                                    : 0;
+
+                            return (
+                                <tr key={item.mes} className="border-t hover:bg-gray-50">
+                                    <td className="px-4 py-2 font-medium text-gray-800">
+                                        {item.mes}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-[#b88e1c] font-semibold">
+                                        {formatCurrency(item.totalPrevisto)}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-green-600 font-semibold">
+                                        {formatCurrency(item.recebido)}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-blue-600 font-semibold">
+                                        {formatCurrency(item.pendente)}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-gray-800 font-semibold">
+                                        {porcentagem}%
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
