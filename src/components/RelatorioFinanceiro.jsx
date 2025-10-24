@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from "react";
+import jsPDF from "jspdf";
+import { Button } from "@/components/ui/button"
+import html2canvas from "html2canvas";
 import { storage } from "@/lib/storage";
 import {
     ResponsiveContainer,
@@ -88,6 +91,48 @@ export default function RelatorioFinanceiro() {
             </div>
         );
     }
+    const handleExportPDF = async () => {
+        const elemento = document.getElementById("relatorio-financeiro");
+        if (!elemento) return;
+
+        const canvas = await html2canvas(elemento, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+
+        // 🕒 Cabeçalho formatado
+        const dataAtual = new Date();
+        const opcoesData = {
+            month: "long",
+            year: "numeric",
+        };
+        const mesAno = dataAtual.toLocaleDateString("pt-BR", opcoesData);
+        const dataHora = dataAtual.toLocaleString("pt-BR");
+
+        // 🧾 Cabeçalho do relatório
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.text("GÊNOVA CONTABILIDADE", 105, 15, { align: "center" });
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(11);
+        pdf.text(`Relatório Financeiro - ${mesAno}`, 105, 22, { align: "center" });
+        pdf.text(`Gerado em: ${dataHora}`, 105, 28, { align: "center" });
+
+        // 🖼️ Imagem do relatório
+        const imgWidth = 190;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const position = 35;
+
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+
+        // 💾 Salva com nome automático
+        pdf.save(`relatorio-financeiro-${anoSelecionado}.pdf`);
+    };
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
@@ -109,98 +154,131 @@ export default function RelatorioFinanceiro() {
                 </select>
             </div>
 
-            <ResponsiveContainer width="100%" height={320}>
-                <ComposedChart
-                    data={dados}
-                    margin={{ top: 20, right: 30, left: 60, bottom: 20 }} // ✅ margem corrigida
-                >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="mes" />
-                    <YAxis
-                        tickFormatter={(value) => formatCurrency(value)}
-                        width={80} // ✅ garante espaço pro "R$"
-                    />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Legend />
-
-                    <Bar dataKey="pendente" fill="#3b82f6" name="Pendente">
-                        <LabelList
-                            dataKey="pendente"
-                            position="top"
-                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
-                            style={{ fontSize: 12, fill: '#3b82f6', fontWeight: 600 }}
-                        />
-                    </Bar>
-
-                    <Bar dataKey="recebido" fill="#10b981" name="Recebido">
-                        <LabelList
-                            dataKey="recebido"
-                            position="top"
-                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
-                            style={{ fontSize: 12, fill: '#10b981', fontWeight: 600 }}
-                        />
-                    </Bar>
-
-                    <Line
-                        type="monotone"
-                        dataKey="totalPrevisto"
-                        stroke="#d4af37"
-                        strokeWidth={3}
-                        name="Total Previsto"
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+            {/* 🧾 Aqui envolvemos tudo com o id */}
+            <div id="relatorio-financeiro">
+                <ResponsiveContainer width="100%" height={320}>
+                    <ComposedChart
+                        data={dados}
+                        margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
                     >
-                        <LabelList
-                            dataKey="totalPrevisto"
-                            position="top"
-                            formatter={(v) => (v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '')}
-                            style={{ fontSize: 12, fill: '#b88e1c', fontWeight: 600 }}
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="mes" />
+                        <YAxis
+                            tickFormatter={(value) => formatCurrency(value)}
+                            width={80}
                         />
-                    </Line>
-                </ComposedChart>
-            </ResponsiveContainer>
-            {/* 🧾 Tabela detalhada mensal */}
-            <div className="mt-8 overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <thead className="bg-gray-100 text-gray-700">
-                        <tr>
-                            <th className="px-4 py-3 text-left">Mês</th>
-                            <th className="px-4 py-3 text-right">Total Previsto</th>
-                            <th className="px-4 py-3 text-right">Recebido</th>
-                            <th className="px-4 py-3 text-right">Pendente</th>
-                            <th className="px-4 py-3 text-right">% Pago</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {dados.map((item) => {
-                            const porcentagem =
-                                item.totalPrevisto > 0
-                                    ? ((item.recebido / item.totalPrevisto) * 100).toFixed(1)
-                                    : 0;
+                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                        <Legend />
 
-                            return (
-                                <tr key={item.mes} className="border-t hover:bg-gray-50">
-                                    <td className="px-4 py-2 font-medium text-gray-800">
-                                        {item.mes}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-[#b88e1c] font-semibold">
-                                        {formatCurrency(item.totalPrevisto)}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-green-600 font-semibold">
-                                        {formatCurrency(item.recebido)}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-blue-600 font-semibold">
-                                        {formatCurrency(item.pendente)}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-gray-800 font-semibold">
-                                        {porcentagem}%
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                        <Bar dataKey="pendente" fill="#3b82f6" name="Pendente">
+                            <LabelList
+                                dataKey="pendente"
+                                position="top"
+                                formatter={(v) =>
+                                    v > 0 ? `R$ ${v.toFixed(2).replace(".", ",")}` : ""
+                                }
+                                style={{
+                                    fontSize: 12,
+                                    fill: "#3b82f6",
+                                    fontWeight: 600,
+                                }}
+                            />
+                        </Bar>
+
+                        <Bar dataKey="recebido" fill="#10b981" name="Recebido">
+                            <LabelList
+                                dataKey="recebido"
+                                position="top"
+                                formatter={(v) =>
+                                    v > 0 ? `R$ ${v.toFixed(2).replace(".", ",")}` : ""
+                                }
+                                style={{
+                                    fontSize: 12,
+                                    fill: "#10b981",
+                                    fontWeight: 600,
+                                }}
+                            />
+                        </Bar>
+
+                        <Line
+                            type="monotone"
+                            dataKey="totalPrevisto"
+                            stroke="#d4af37"
+                            strokeWidth={3}
+                            name="Total Previsto"
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                        >
+                            <LabelList
+                                dataKey="totalPrevisto"
+                                position="top"
+                                formatter={(v) =>
+                                    v > 0 ? `R$ ${v.toFixed(2).replace(".", ",")}` : ""
+                                }
+                                style={{
+                                    fontSize: 12,
+                                    fill: "#b88e1c",
+                                    fontWeight: 600,
+                                }}
+                            />
+                        </Line>
+                    </ComposedChart>
+                </ResponsiveContainer>
+
+                {/* 🧾 Tabela detalhada mensal */}
+                <div className="mt-8 overflow-x-auto">
+                    <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
+                        <thead className="bg-gray-100 text-gray-700">
+                            <tr>
+                                <th className="px-4 py-3 text-left">Mês</th>
+                                <th className="px-4 py-3 text-right">Total Previsto</th>
+                                <th className="px-4 py-3 text-right">Recebido</th>
+                                <th className="px-4 py-3 text-right">Pendente</th>
+                                <th className="px-4 py-3 text-right">% Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dados.map((item) => {
+                                const porcentagem =
+                                    item.totalPrevisto > 0
+                                        ? ((item.recebido / item.totalPrevisto) * 100).toFixed(1)
+                                        : 0;
+
+                                return (
+                                    <tr key={item.mes} className="border-t hover:bg-gray-50">
+                                        <td className="px-4 py-2 font-medium text-gray-800">
+                                            {item.mes}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-[#b88e1c] font-semibold">
+                                            {formatCurrency(item.totalPrevisto)}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-green-600 font-semibold">
+                                            {formatCurrency(item.recebido)}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-blue-600 font-semibold">
+                                            {formatCurrency(item.pendente)}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-gray-800 font-semibold">
+                                            {porcentagem}%
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* 📤 Botão fora do container para não sair no PDF */}
+            <div className="mt-6 flex justify-end">
+                <Button
+                    onClick={handleExportPDF}
+                    className="bg-[#d4af37] hover:bg-[#c49d2f] text-white font-medium px-4 py-2 rounded-lg"
+                >
+                    Exportar Relatório em PDF
+                </Button>
             </div>
         </div>
     );
+
 }
