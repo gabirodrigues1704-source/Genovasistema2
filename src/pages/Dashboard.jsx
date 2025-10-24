@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
+import { TrendingUp, DollarSign, Clock, AlertCircle, Users } from 'lucide-react'; // 👈 adicionei o ícone Users
 import CardResumo from '@/components/CardResumo';
 import { storage } from '@/lib/storage';
 import { getCurrentMonthYear } from '@/lib/utils';
@@ -12,12 +12,17 @@ const Dashboard = () => {
         previsto: 0,
         recebido: 0,
         pendente: 0,
-        atrasado: 0
+        atrasado: 0,
     });
+
+    const [totalClientes, setTotalClientes] = useState(0); // 👈 novo estado
     const location = useLocation();
 
     const calculateStats = useCallback(() => {
         const honorarios = storage.getHonorarios();
+        const clientes = storage.getClients(); // 👈 pega os clientes do localStorage
+        setTotalClientes(clientes.length); // 👈 conta total de clientes
+
         const currentMonth = getCurrentMonthYear();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -35,7 +40,7 @@ const Dashboard = () => {
 
         const atrasado = currentMonthHonorarios
             .filter(h => {
-                const vencimento = new Date(h.data_vencimento + 'T00:00:00-03:00'); // Consider local timezone
+                const vencimento = new Date(h.data_vencimento + 'T00:00:00-03:00');
                 return h.status === 'pendente' && vencimento < today;
             })
             .reduce((sum, h) => sum + h.valor_total, 0);
@@ -47,8 +52,6 @@ const Dashboard = () => {
 
     useEffect(() => {
         calculateStats();
-        // Recalculate stats every time we navigate back to the dashboard
-        // to ensure data is fresh after changes on other pages.
     }, [location.pathname, calculateStats]);
 
     return (
@@ -61,10 +64,10 @@ const Dashboard = () => {
             <div className="space-y-8">
                 <div>
                     <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard Financeiro</h1>
-                    <p className="text-gray-600">Visão geral dos honorários do mês atual</p>
+                    <p className="text-gray-600">Visão geral dos honorários e clientes</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <CardResumo
                         title="Previsto"
                         value={stats.previsto}
@@ -93,7 +96,16 @@ const Dashboard = () => {
                         color="#ef4444"
                         delay={0.3}
                     />
+                    {/* 👇 novo card */}
+                    <CardResumo
+                        title="Total de Clientes"
+                        value={totalClientes}
+                        icon={Users}
+                        color="#6366f1"
+                        delay={0.4}
+                    />
                 </div>
+
                 <RelatorioFinanceiro />
             </div>
         </>

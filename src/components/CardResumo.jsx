@@ -14,7 +14,11 @@ const CardResumo = ({ title, value, icon: Icon, color, delay = 0 }) => {
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{formatCurrency(value)}</p>
+                    <p className="text-2xl font-bold">
+                        {typeof value === "number" && title === "Total de Clientes"
+                            ? value // 👉 mostra só o número puro
+                            : formatCurrency(value)} {/* 👉 mantém R$ para os outros cards */}
+                    </p>
                 </div>
                 <div
                     className="w-14 h-14 rounded-full flex items-center justify-center"
