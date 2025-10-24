@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Download, Plus, CheckCircle, Clock } from 'lucide-react';
+import { Download, Trash2, Plus, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Modal from '@/components/Modal';
 import ExtraServiceForm from '@/components/ExtraServiceForm';
@@ -98,6 +98,49 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
             });
         }
     };
+    const handleSendWhatsApp = () => {
+        if (!cliente.telefone) {
+            toast({
+                title: "Telefone não encontrado",
+                description: "Este cliente não possui número de WhatsApp cadastrado.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // Remove caracteres não numéricos (somente números)
+        const phone = cliente.telefone.replace(/\D/g, '');
+
+        // Cria a mensagem padrão
+        const message = `Olá ${cliente.nome}, segue o recibo do seu honorário referente a ${formatMonthYear(honorario.mes_referencia)}.
+Valor total: ${formatCurrency(honorario.valor_total)} 💼📄
+Obrigado pela parceria!`;
+
+        // Cria o link do WhatsApp
+        const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
+
+        // Abre o WhatsApp em nova aba
+        window.open(whatsappUrl, '_blank');
+        const updatedHonorario = { ...honorario, enviado_whatsapp: true };
+        onUpdate(updatedHonorario);
+
+        toast({
+            title: "Mensagem aberta no WhatsApp!",
+            description: `Enviando honorário para ${cliente.nome}.`,
+        });
+    };
+    const handleMarkAsSent = () => {
+        const updatedHonorario = { ...honorario, enviado_whatsapp: !honorario.enviado_whatsapp };
+
+        onUpdate(updatedHonorario);
+
+        toast({
+            title: updatedHonorario.enviado_whatsapp
+                ? "Honorário marcado como enviado ✅"
+                : "Envio desmarcado",
+            description: `Status atualizado para ${cliente.nome}.`,
+        });
+    };
 
     return (
         <>
@@ -128,6 +171,25 @@ const HonorarioCard = ({ honorario, cliente, onUpdate, onDelete }) => {
                     </div>
 
                     <div className="flex space-x-2">
+                        <Button
+                            onClick={() => handleMarkAsSent()}
+                            variant="outline"
+                            size="sm"
+                            className={honorario.enviado_whatsapp
+                                ? "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                                : "border-gray-400 text-gray-500 hover:bg-gray-100"
+                            }
+                        >
+                            {honorario.enviado_whatsapp ? "Enviado ✅" : "Marcar como Enviado"}
+                        </Button>
+                        <Button
+                            onClick={() => handleSendWhatsApp()}
+                            variant="outline"
+                            size="sm"
+                            className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                        </Button>
                         <Button
                             onClick={handleToggleStatus}
                             variant="outline"

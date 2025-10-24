@@ -100,6 +100,7 @@ const Honorarios = () => {
                     forma_pagamento: null,
                     data_pagamento: null,
                     observacoes: '',
+                    enviado_whatsapp: false, // 👈 novo campo
                     created_at: new Date().toISOString()
                 };
             });
